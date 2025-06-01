@@ -1,0 +1,14 @@
+def tranformation(vampyr, wyrwolf):
+    """tells user what to do if they are a vampire or werewolf"""
+    if vampyr == True:
+        print("you, Kurt Goodbar,  are a bloodthirsty force of darkness!")
+    elif wyrwolf == True: 
+         print("you, Kurt Goodbar,  smell like one, too. ")
+    else:
+        print("maintain your virginity, Kurty,  and roam the streets at night in flowing white nightclothes. . . you may be turned yet. . . ")
+   
+vampyr_input = input("Are you, Kurt Goodbar,  the kind of creature of the night that is called a vampire? Yes or No?" ).strip() .lower()
+wyrwolf_input = input("Are you, Kurt Goodbar, the kind of creature of the night that is called a werewolf? Yes or No?").strip().lower()
+vampyr = vampyr_input == "yes"
+wyrwolf = wyrwolf_input == "yes"
+tranformation(vampyr, wyrwolf)
