@@ -1,0 +1,198 @@
+"""
+Task-Reward Sprint App (Mac Desktop Version)
+----------------------------------------------
+This program lets users input 10 unpleasant tasks and 10 pleasant rewards,
+matched in pairs based on a 1–10 scale. Once all pairs are added and the
+sprint is locked, users must complete the unpleasant task before unlocking
+the paired reward. This implementation uses Python's Tkinter GUI library.
+
+Designed for instructional clarity, this code includes explanatory comments
+and docstrings to help users understand how the logic and UI work together.
+"""
+
+import tkinter as tk
+from tkinter import messagebox
+
+class TaskRewardPair:
+    """
+    Represents a matched pair of an unpleasant task and a pleasant reward.
+    Tracks the rating (1–10), and whether the task and reward are completed.
+    """
+    def __init__(self, task, reward, rating):
+        self.task = task
+        self.reward = reward
+        self.rating = rating
+        self.task_done = False
+        self.reward_done = False
+
+    def mark_task_done(self):
+        self.task_done = True
+
+    def mark_reward_done(self):
+        if self.task_done:
+            self.reward_done = True
+
+class SprintApp:
+    """
+    The main app controller. Handles the UI layout, task/reward pair management,
+    and sprint lifecycle (input, locking, task completion).
+    """
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Task-Reward Sprint App")
+
+        self.pairs = []
+        self.sprint_locked = False
+        self.table_rows = []  # Stores references to widgets for dynamic updates
+
+        self.build_gui()
+
+    def build_gui(self):
+        """
+        Builds the top input section and the main task-reward table.
+        """
+        # Input fields
+        input_frame = tk.Frame(self.root)
+        input_frame.pack(pady=10)
+
+        tk.Label(input_frame, text="Task:").grid(row=0, column=0)
+        self.task_entry = tk.Entry(input_frame, width=30)
+        self.task_entry.grid(row=0, column=1)
+
+        tk.Label(input_frame, text="Reward:").grid(row=1, column=0)
+        self.reward_entry = tk.Entry(input_frame, width=30)
+        self.reward_entry.grid(row=1, column=1)
+
+        tk.Label(input_frame, text="Rating (1–10):").grid(row=2, column=0)
+        self.rating_var = tk.IntVar()
+        self.rating_menu = tk.OptionMenu(input_frame, self.rating_var, *range(1, 11))
+        self.rating_menu.grid(row=2, column=1)
+
+        self.add_button = tk.Button(input_frame, text="Add Pair", command=self.add_pair)
+        self.add_button.grid(row=3, column=0, columnspan=2, pady=5)
+
+        self.lock_button = tk.Button(input_frame, text="Lock Sprint", command=self.lock_sprint)
+        self.lock_button.grid(row=4, column=0, columnspan=2, pady=5)
+
+        # Task/Reward Table
+        self.table_frame = tk.Frame(self.root)
+        self.table_frame.pack(pady=10)
+
+        headers = ["Task", "Rating", "Reward", "Status", "Actions"]
+        for col, text in enumerate(headers):
+            tk.Label(self.table_frame, text=text, font=("Arial", 10, "bold"), width=15).grid(row=0, column=col)
+
+        # Pre-fill 10 blank rows for clarity
+        for i in range(10):
+            self.add_table_row(i, None)
+
+    def add_table_row(self, index, pair):
+        """
+        Creates or updates a row in the table view.
+        """
+        row_widgets = {}
+        row = index + 1  # Offset for header row
+
+        row_widgets['task'] = tk.Label(self.table_frame, text=pair.task if pair else "(Not Set)", width=20)
+        row_widgets['task'].grid(row=row, column=0)
+
+        row_widgets['rating'] = tk.Label(self.table_frame, text=str(pair.rating) if pair else "-", width=5)
+        row_widgets['rating'].grid(row=row, column=1)
+
+        row_widgets['reward'] = tk.Label(self.table_frame, text=pair.reward if pair else "(Not Set)", width=20)
+        row_widgets['reward'].grid(row=row, column=2)
+
+        status = "Pair Complete" if pair and pair.reward_done else (
+                 "Task Done" if pair and pair.task_done else (
+                 "Locked" if pair else "Not Set"))
+        row_widgets['status'] = tk.Label(self.table_frame, text=status, width=15)
+        row_widgets['status'].grid(row=row, column=3)
+
+        # Buttons
+        action_frame = tk.Frame(self.table_frame)
+        action_frame.grid(row=row, column=4)
+
+        task_btn = tk.Button(action_frame, text="Mark Task", command=lambda i=index: self.mark_task_done(i))
+        reward_btn = tk.Button(action_frame, text="Mark Reward", command=lambda i=index: self.mark_reward_done(i))
+
+        if not pair or not self.sprint_locked or pair.task_done:
+            task_btn.config(state="disabled")
+        if not pair or not pair.task_done or pair.reward_done:
+            reward_btn.config(state="disabled")
+
+        task_btn.pack(side=tk.LEFT)
+        reward_btn.pack(side=tk.LEFT)
+
+        row_widgets['task_btn'] = task_btn
+        row_widgets['reward_btn'] = reward_btn
+
+        if index < len(self.table_rows):
+            self.table_rows[index] = row_widgets
+        else:
+            self.table_rows.append(row_widgets)
+
+    def add_pair(self):
+        """
+        Adds a new task-reward pair if sprint is not locked and fewer than 10 pairs exist.
+        """
+        if self.sprint_locked:
+            messagebox.showwarning("Sprint Locked", "You can't add pairs after locking the sprint.")
+            return
+
+        if len(self.pairs) >= 10:
+            messagebox.showwarning("Limit Reached", "Only 10 pairs are allowed per sprint.")
+            return
+
+        task = self.task_entry.get().strip()
+        reward = self.reward_entry.get().strip()
+        rating = self.rating_var.get()
+
+        if not task or not reward or not rating:
+            messagebox.showwarning("Missing Input", "Please enter task, reward, and rating.")
+            return
+
+        pair = TaskRewardPair(task, reward, rating)
+        self.pairs.append(pair)
+        self.add_table_row(len(self.pairs) - 1, pair)
+
+        # Clear fields
+        self.task_entry.delete(0, tk.END)
+        self.reward_entry.delete(0, tk.END)
+...         self.rating_var.set(0)
+... 
+...     def lock_sprint(self):
+...         """
+...         Locks the sprint, preventing further input. Activates task tracking.
+...         """
+...         if len(self.pairs) != 10:
+...             messagebox.showwarning("Incomplete", "Please enter exactly 10 pairs before locking.")
+...             return
+... 
+...         self.sprint_locked = True
+...         self.update_table()
+... 
+...     def update_table(self):
+...         """
+...         Refreshes all table rows with current pair data and status.
+...         """
+...         for i, pair in enumerate(self.pairs):
+...             self.add_table_row(i, pair)
+... 
+...     def mark_task_done(self, index):
+...         """
+...         Marks the task portion of a pair as complete.
+...         """
+...         self.pairs[index].mark_task_done()
+...         self.update_table()
+... 
+...     def mark_reward_done(self, index):
+...         """
+...         Marks the reward portion of a pair as complete (if task is done).
+...         """
+...         self.pairs[index].mark_reward_done()
+...         self.update_table()
+... 
+... if __name__ == '__main__':
+...     root = tk.Tk()
+...     app = SprintApp(root)
+...     root.mainloop()
